@@ -389,3 +389,27 @@ The exact bit-level wire formats, error codes, and Protocol Data Unit (PDU) stru
 The author would like to thank the individual reviewers from the IETF community for their valuable feedback and contributions during the development of this document.
 
 The design of Source-Selective BGP (SSB) and the specified BGP SOURCE_SELECTIVE Attribute build on decades of work in BGP, RPKI, and secure routing. The author gratefully acknowledges the contributions of the IETF IDR, SIDROPS, and GROW working groups.
+
+# Appendix A. Change Log
+{:unnumbered}
+
+--- note_Note_to_Readers
+*RFC EDITOR: Please remove this section before publication.*
+
+Changes from draft-braet-idr-bgp-source-selective-attr-00 to -01:
+
+* Fully updated the IANA Considerations section based on direct IANA email feedback.
+* Updated author affiliation company name to Liberty Global.
+* Introduced a "Max AS Hops" sub-TLV field based on mailing list feedback. This updated the Design Rationale, Encoding, Semantics, Support for Route Summarization, Route Processing, and Resource Optimization sections, and added the "Outbound Propagation Guidelines" section.
+* Added "PMTUD and Diagnostic Interactions" sections ("ICMP and MTU Handling" and "ICMPv6 Bypass Prevention") to mitigate path MTU discovery concerns.
+* Replaced the "Hardware Optimization" section with a "Resource Protection" section to improve guidelines for explicitly controlling router resource usage during source policy implementation.
+* Updated the Introduction with a reference to the Framework document explaining why BGP Communities are not used.
+* Added a "Policy Enforcement on ASBR Nodes" section to specify exactly where source authorization policies should be enforced.
+* Added an "Unsigned Attribute and Integrity Considerations" section to the Security Considerations section.
+* Added an "Impact on Route Selection" section to Section 5 (Operational Guidance) to normatively state that BGP route selection is not influenced.
+* Updated Security Considerations to state that Network Operations SHOULD implement SAV for source prefixes included in SSB.
+* Revised the first paragraph of Section 1 to explicitly clarify that this mechanism only offers IP reachability control.
+* Added text to the Design Rationale highlighting the resource consumption differences between packet filters and SSB's second lookup.
+* Added a non-normative "Intended Status and Scope" section.
+
+
