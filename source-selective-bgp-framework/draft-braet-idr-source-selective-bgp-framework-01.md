@@ -686,8 +686,29 @@ Rather than introducing in-band signatures on BGP UPDATE messages, the Source Se
 
 This document makes no requests of IANA.
 
+--- back
+
 # Acknowledgments {#acknowledgements}
+{:unnumbered}
 
 The author would like to thank Ritesh Mukherjee (Nokia), Antoin Verschuren (Liberty Global), and individual reviewers from the IETF community for their valuable feedback and contributions during the development of this document.
 
 The design of Source-Selective BGP (SSB) builds on decades of work in BGP, RPKI, and secure routing, and the author gratefully acknowledges the contributions of the IETF IDR, SIDROPS, and GROW working groups.
+
+# Change Log {change-log}
+{:unnumbered}
+
+--- note_Note_to_Readers
+*RFC EDITOR: Please remove this section before publication.*
+
+Changes from draft-braet-idr-source-selective-bgp-framework-00 to -01:
+
+* Updated author affiliation company name to Liberty Global.
+* Updated the Abstract to highlight how mitigating high-volume DDoS attacks requires high-capacity networks with large customer bases, emphasizing that SSB scales to support millions of filter entries.
+* Extended the FlowSpec comparison section to address the scalability limitations of FlowSpec, control-plane churn, lack of cryptographic authorization, reactive vs. proactive operational models, and how SSB natively integrates into reachability advertisements.
+* Added a "PMTUD and Diagnostic Interactions" section to comprehensively address path MTU discovery concerns.
+* Updated the "Limitations of Alternative Signaling Mechanisms" section with explicit explanations of the unsuitability of using BGP Extended and Large Communities for this purpose.
+* Updated the "BGP Control Plane Manipulation" section within the Security Considerations chapter.
+* Added an "Applicability and Limitations" section to elaborate on intrinsic SSB limitations and structural Tier-1 network provider incentives.
+* Added an "Acknowledgements" section thanking Antoin Verschuren for his thorough review.
+
