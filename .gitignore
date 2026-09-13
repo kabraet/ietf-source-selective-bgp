@@ -1,0 +1,8 @@
+# Ignore IETF compilation artifacts
+*.txt
+*.html
+*.pdf
+*.xml
+.xml2rfc/
+.cache/
+
