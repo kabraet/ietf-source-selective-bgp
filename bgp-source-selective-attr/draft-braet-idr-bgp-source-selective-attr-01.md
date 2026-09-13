@@ -383,17 +383,8 @@ These extensions introduce two new functional PDU types:
 
 The exact bit-level wire formats, error codes, and Protocol Data Unit (PDU) structures for these messages are outside the scope of the IDR working group and will be formally specified in a future Standards Track document targeting the SIDROPS working group.
 
-# Acknowledgments {#acknowledgments}
-{:unnumbered}
+# Change Log {#change-log}
 
-The author would like to thank the individual reviewers from the IETF community for their valuable feedback and contributions during the development of this document.
-
-The design of Source-Selective BGP (SSB) and the specified BGP SOURCE_SELECTIVE Attribute build on decades of work in BGP, RPKI, and secure routing. The author gratefully acknowledges the contributions of the IETF IDR, SIDROPS, and GROW working groups.
-
-# Appendix A. Change Log
-{:unnumbered}
-
---- note_Note_to_Readers
 *RFC EDITOR: Please remove this section before publication.*
 
 Changes from draft-braet-idr-bgp-source-selective-attr-00 to -01:
@@ -412,4 +403,10 @@ Changes from draft-braet-idr-bgp-source-selective-attr-00 to -01:
 * Added text to the Design Rationale highlighting the resource consumption differences between packet filters and SSB's second lookup.
 * Added a non-normative "Intended Status and Scope" section.
 
+# Acknowledgments {#acknowledgments}
+{:unnumbered}
+
+The author would like to thank the individual reviewers from the IETF community for their valuable feedback and contributions during the development of this document.
+
+The design of Source-Selective BGP (SSB) and the specified BGP SOURCE_SELECTIVE Attribute build on decades of work in BGP, RPKI, and secure routing. The author gratefully acknowledges the contributions of the IETF IDR, SIDROPS, and GROW working groups.
 
