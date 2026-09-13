@@ -1,0 +1,46 @@
+name: Compile IETF Internet-Drafts
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository code
+      uses: actions/checkout@v4
+
+    - name: Set up Ruby environment
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.2'
+        bundler-cache: true
+
+    - name: Set up Python environment
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install IETF Authoring Tools
+      run: |
+        gem install kramdown-rfc2629
+        pip install xml2rfc
+
+    - name: Compile Drafts via Makefile
+      run: |
+        make
+
+    - name: Upload Compiled Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ietf-compiled-drafts
+        path: |
+          bgp-source-selective-attr/*.txt
+          bgp-source-selective-attr/*.html
+          source-selective-bgp-framework/*.txt
+          source-selective-bgp-framework/*.html
+        retention-days: 14

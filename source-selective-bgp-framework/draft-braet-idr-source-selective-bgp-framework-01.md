@@ -688,17 +688,8 @@ This document makes no requests of IANA.
 
 --- back
 
-# Acknowledgments {#acknowledgements}
-{:unnumbered}
+# Change Log {#change-log}
 
-The author would like to thank Ritesh Mukherjee (Nokia), Antoin Verschuren (Liberty Global), and individual reviewers from the IETF community for their valuable feedback and contributions during the development of this document.
-
-The design of Source-Selective BGP (SSB) builds on decades of work in BGP, RPKI, and secure routing, and the author gratefully acknowledges the contributions of the IETF IDR, SIDROPS, and GROW working groups.
-
-# Change Log {change-log}
-{:unnumbered}
-
---- note_Note_to_Readers
 *RFC EDITOR: Please remove this section before publication.*
 
 Changes from draft-braet-idr-source-selective-bgp-framework-00 to -01:
@@ -711,4 +702,11 @@ Changes from draft-braet-idr-source-selective-bgp-framework-00 to -01:
 * Updated the "BGP Control Plane Manipulation" section within the Security Considerations chapter.
 * Added an "Applicability and Limitations" section to elaborate on intrinsic SSB limitations and structural Tier-1 network provider incentives.
 * Added an "Acknowledgements" section thanking Antoin Verschuren for his thorough review.
+
+# Acknowledgments {#acknowledgements}
+{:unnumbered}
+
+The author would like to thank Ritesh Mukherjee (Nokia), Antoin Verschuren (Liberty Global), and individual reviewers from the IETF community for their valuable feedback and contributions during the development of this document.
+
+The design of Source-Selective BGP (SSB) builds on decades of work in BGP, RPKI, and secure routing, and the author gratefully acknowledges the contributions of the IETF IDR, SIDROPS, and GROW working groups.
 
