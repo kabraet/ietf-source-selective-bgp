@@ -5,6 +5,8 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+    permissions:
+      contents: write 
 
 jobs:
   build:
@@ -34,13 +36,22 @@ jobs:
       run: |
         make
 
-    - name: Upload Compiled Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: ietf-compiled-drafts
-        path: |
-          bgp-source-selective-attr/*.txt
-          bgp-source-selective-attr/*.html
-          source-selective-bgp-framework/*.txt
+    - name: Deploy Compiled Files to Latest Release
+      if: github.ref == 'refs/heads/main' # Only upload to the release page on main branch pushes
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Delete the old continuous tracking tag if it already exists
+        gh release delete latest --yes || true
+        git tag -d latest || true
+        git push origin :refs/tags/latest || true
+        
+        # Create a fresh, highly visible release entry containing your raw drafts
+        gh release create latest \
+          --title "Latest Compiled Internet-Drafts" \
+          --notes "Automated compilation generated from commit: ${{ github.sha }}" \
+          bgp-source-selective-attr/*.txt \
+          bgp-source-selective-attr/*.html \
+          source-selective-bgp-framework/*.txt \
           source-selective-bgp-framework/*.html
-        retention-days: 14
+
