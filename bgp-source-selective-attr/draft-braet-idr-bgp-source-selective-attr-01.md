@@ -81,7 +81,7 @@ SOURCE_SELECTIVE complements, but does not replace, existing BGP Community mecha
 
 This document is part of the Source-Selective BGP framework [I-D.braet-idr-source-selective-bgp-framework], which defines an architecture consisting of RPKI Source Authorization objects and a BGP Path Attribute used to reference them. The SOURCE_SELECTIVE Path Attribute provides a mechanism to bind BGP reachability information to holder-signed source authorization data.
 
-This document specifies the syntax and protocol procedures for the SOURCE_SELECTIVE path attribute. As specified in Section {{impact-on-route-selection}}, this attribute does not alter standard BGP route selection.
+This document specifies the syntax and protocol procedures for the SOURCE_SELECTIVE path attribute. As specified in {{impact-on-route-selection}}, this attribute does not alter standard BGP route selection.
 
 For a detailed analysis of why existing community mechanisms (e.g., [RFC4360], [RFC8092]) cannot be used for this signaling, see Section 9.1.5 of [I-D.braet-idr-source-selective-bgp-framework].
 
@@ -244,7 +244,7 @@ BGP speakers receiving the SOURCE_SELECTIVE attribute MUST process it as an opti
 * SA-ID fields in the attribute are logical references and MUST NOT be interpreted as instructions to retrieve objects.
 * Retrieval and validation of RPKI data are performed via local caches using existing mechanisms (see Appendix A).
 * Validated SA Object data MAY be used to enforce policies restricting IP packet forwarding based on source authorization.
-* Resolution of SA-IDs TLV MUST be performed by exact data-field matching of the Protected Prefixes against the local cache.
+* Resolution of SA-ID TLVs MUST be performed by exact data-field matching of the Protected Prefixes against the local cache.
 * SA-ID processing SHOULD be consistent across enforcement points to prevent unintended traffic drops or acceptance of unauthorized traffic.
 * TLVs of unknown SA Type MUST be propagated unchanged.
 
@@ -318,7 +318,7 @@ A BGP speaker MUST execute the standard BGP route selection and tie-breaking alg
 
 # Security Considerations {#security-considerations}
 
-The Source Prefix Policies do not prevent source address spoofing on networks that do not implement Source Address Validation (SAV), as described in [RFC2827], [RFC8704], and [RFC3704]. Network operators implementing Source-Selective BGP SHOULD have a solid SAV mechanism in place for the source prefixes included in SSB. Enforcement of Source Prefix Policies will be ineffective in the presence of spoofed source addresses.
+The Source Prefix Policies do not prevent source address spoofing on networks that do not implement Source Address Validation (SAV), as described in [RFC2827], [RFC8704], and [RFC3704]. Network operators implementing Source-Selective BGP SHOULD have a solid SAV mechanism in place for their referenced source prefixes. Enforcement of Source Prefix Policies will be ineffective in the presence of spoofed source addresses.
 
 Source Prefixes are published in publicly accessible RPKI repositories and may reveal information about communication relationships or traffic patterns. To mitigate these risks, an AS network MAY choose to limit the advertisement or use of Source Prefix Policy-enabled routes to networks that:
 
