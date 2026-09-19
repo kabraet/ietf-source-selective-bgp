@@ -198,7 +198,7 @@ The SA-ID TLV defines a common identification framework for Source Authorization
 +------------------------+
 | Prefix Length          | 1 octet
 +------------------------+
-| Protected Prefix       | Variable Length
+| Protected Prefix       | 4 or 8 octets
 +------------------------+
 ~~~~~~~~~~
 
@@ -206,10 +206,10 @@ The SA-ID TLV defines a common identification framework for Source Authorization
   * 0x01 = IPv4 Source Prefix Authorization (SPA-v4)
   * 0x02 = IPv6 Source Prefix Authorization (SPA-v6)
   * 0x03-0xFF = reserved for future types  
-* TLV Length: Length, in octets, of the Prefix Length and Protected Prefix fields combined.
+* TLV Length: The length, in octets, of the TLV Value field, including the Max AS Hops, Prefix Length, and Protected Prefix fields.
 * Max AS Hops: Maximum number of Autonomous System (AS) hops this sub-TLV can traverse.
 * Prefix Length: Length, in bits, of the Address Prefix.
-* Protected Prefix: A variable-length field containing the IP address prefix with trailing zeros up to the next full octet boundary. For IPv4, maximum length is 4 octets. For IPv6, Prefix Length is capped at 64 bits (maximum 8 octets).
+* Protected Prefix: A fixed-length field containing the IP address prefix associated with the referenced Source Authorization object. For IPv4 SA Types, the field occupies 4 octets. For IPv6 SA Types, the field occupies 8 octets.
 
 ### Semantics {#semantics}
 
