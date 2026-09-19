@@ -36,22 +36,44 @@ jobs:
       run: |
         make
 
-    - name: Deploy Compiled Files to Latest Release
-      if: github.ref == 'refs/heads/main' # Only upload to the release page on main branch pushes
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Organize Deployment Folder Structure
+      if: github.ref == 'refs/heads/main'
       run: |
-        # Delete the old continuous tracking tag if it already exists
-        gh release delete latest --yes || true
-        git tag -d latest || true
-        git push origin :refs/tags/latest || true
+        # Build the container routing folder
+        mkdir -p public
         
-        # Create a fresh, highly visible release entry containing your raw drafts
-        gh release create latest \
-          --title "Latest Compiled Internet-Drafts" \
-          --notes "Automated compilation generated from commit: ${{ github.sha }}" \
-          bgp-source-selective-attr/*.txt \
-          bgp-source-selective-attr/*.html \
-          source-selective-bgp-framework/*.txt \
-          source-selective-bgp-framework/*.html
+        # Copy compiled assets into place
+        cp bgp-source-selective-attr/*.html public/attr.html
+        cp bgp-source-selective-attr/*.txt public/attr.txt
+        cp source-selective-bgp-framework/*.html public/framework.html
+        cp source-selective-bgp-framework/*.txt public/framework.txt
+        
+        # Write a simple home dashboard file
+        cat << 'EOF' > public/index.html
+        <!DOCTYPE html>
+        <html>
+        <head><title>IETF Source-Selective BGP Drafts</title></head>
+        <body>
+          <h1>Latest Compiled Internet-Drafts</h1>
+          <ul>
+            <li><strong>BGP Source-Selective Attribute:</strong> 
+                <a href="attr.html">View HTML Draft</a> | <a href="attr.txt">View Text Draft</a></li>
+            <li><strong>Source-Selective BGP Framework:</strong> 
+                <a href="framework.html">View HTML Draft</a> | <a href="framework.txt">View Text Draft</a></li>
+          </ul>
+        </body>
+        </html>
+        EOF
+
+    - name: Upload Pages Package Artifact
+      if: github.ref == 'refs/heads/main'
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: public
+
+    - name: Deploy Pages Site to Internet
+      if: github.ref == 'refs/heads/main'
+      id: deployment
+      uses: actions/deploy-pages@v4
+
 
