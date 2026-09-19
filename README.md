@@ -18,8 +18,8 @@ This mono-repo actively manages two closely coupled documents inside their respe
 Every time updates are pushed to the `main` branch, an automated GitHub Actions pipeline compiles the source files using `kramdown-rfc2629` and `xml2rfc`. You can view the live drafts directly in your browser:
 
 *   **Landing Page Menu:** [kabraet.github.io/ietf-source-selective-bgp/](https://kabraet.github.io/ietf-source-selective-bgp/)
-*   **BGP Attribute Draft:** [HTML Version](https://kabraet.github.io/ietf-source-selective-bgp/attr.html) | [Plain Text Version]([https://github.ioattr.txt](https://kabraet.github.io/ietf-source-selective-bgp/attr.txt)
-*   **Framework Draft:** [HTML Version]([https://github.ioframework.html](https://kabraet.github.io/ietf-source-selective-bgp/framework.html)) | [Plain Text Version]([https://github.ioframework.txt](https://kabraet.github.io/ietf-source-selective-bgp/framework.txt)
+*   **BGP Attribute Draft:** [HTML Version](https://kabraet.github.io/ietf-source-selective-bgp/attr.html) | [Plain Text Version](https://kabraet.github.io/ietf-source-selective-bgp/attr.txt)
+*   **Framework Draft:** [HTML Version](https://kabraet.github.io/ietf-source-selective-bgp/framework.html) | [Plain Text Version](https://kabraet.github.io/ietf-source-selective-bgp/framework.txt)
 
 ---
 
