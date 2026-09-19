@@ -8,6 +8,11 @@ on:
     permissions:
       contents: write 
 
+permissions:
+  contents: read
+  pages: write      # Explicitly allows staging web assets
+  id-token: write   # Resolves the secure handshake error
+
 jobs:
   build:
     runs-on: ubuntu-latest
