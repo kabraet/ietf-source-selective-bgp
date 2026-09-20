@@ -22,6 +22,15 @@ author:
   country: Netherlands
 
 normative:
+  I-D.braet-sidrops-spa-profile:
+    title: "A Profile for Source Prefix Authorizations (SPAs)"
+    author:
+      ins: K. Braet
+      name: Kamiel Braet
+      org: Liberty Global Ltd.
+    seriesinfo:
+      IETF: draft-braet-sidrops-spa-profile
+    date: 2026
   RFC2119:
   RFC4271:
   RFC2827:
@@ -38,21 +47,10 @@ informative:
     seriesinfo:
       Internet-Draft: draft-braet-idr-source-selective-bgp-framework
     date: 2026
-  I-D.braet-sidrops-spa-profile:
-    title: "A Profile for Source Prefix Authorizations (SPAs)"
-    author:
-      ins: K. Braet
-      name: Kamiel Braet
-      org: Liberty Global Ltd.
-    seriesinfo:
-      IETF: draft-braet-sidrops-spa-profile
-    date: 2026
   RFC4360:
   RFC8092:
   RFC8126:
-  RFC8201:
   RFC8210:
-  RFC8899:
   RFC8955:
   RFC9234:
 
@@ -79,7 +77,7 @@ Each BGP speaker supporting SOURCE_SELECTIVE as described in this document is ex
 
 SOURCE_SELECTIVE complements, but does not replace, existing BGP Community mechanisms.
 
-This document is part of the Source-Selective BGP framework [I-D.braet-idr-source-selective-bgp-framework], which defines an architecture consisting of RPKI Source Authorization objects and a BGP Path Attribute used to reference them. The SOURCE_SELECTIVE Path Attribute provides a mechanism to bind BGP reachability information to holder-signed source authorization data.
+This document is part of the Source-Selective BGP framework [I-D.braet-idr-source-selective-bgp-framework], which defines an architecture consisting of RPKI SA objects and a BGP Path Attribute used to reference them. The SOURCE_SELECTIVE Path Attribute provides a mechanism to bind BGP reachability information to holder-signed source authorization data.
 
 This document specifies the syntax and protocol procedures for the SOURCE_SELECTIVE path attribute. As specified in {{impact-on-route-selection}}, this attribute does not alter standard BGP route selection.
 
@@ -91,8 +89,8 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 
 * Source Authorization (SA): An RPKI Object created by prefix holders to define sources authorized to originate traffic toward their prefixes or subprefixes. Examples include SPA and SGA RPKI Object types.
 * Source Prefix Authorization (SPA): A set of Source IP address prefixes authorized to send packets to a destination prefix published in RPKI as specified in [I-D.braet-sidrops-spa-profile]
-* SOURCE_SELECTIVE: The BGP Path Attribute that references one or more RPKI Source Authorization (SA) objects as specified in this document.
-* Source Authorization Identifier (SA-ID): A SOURCE_SELECTIVE sub-TLV field that encapsulates a network prefix structure, serving as a data-plane lookup key to reference a specific validated RPKI SA object within a router's local cache..
+* SOURCE_SELECTIVE: The BGP Path Attribute that references one or more RPKI SA objects as specified in this document.
+* Source Authorization Identifier (SA-ID): A SOURCE_SELECTIVE sub-TLV field that encapsulates a network prefix structure, serving as a data-plane lookup key to reference a specific validated RPKI SA object within a router's local cache.
 * Source Address Validation (SAV): Techniques that prevent packets with spoofed source addresses from entering or traversing a network.
 * SPA-v4 and SPA-v6: In this document, the terms SPA-v4 and SPA-v6 are used informatively to refer to IPv4 and IPv6 instantiations of the Source Prefix Authorization (SPA) object, respectively.
 
@@ -101,31 +99,30 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 BGP SOURCE_SELECTIVE Attribute operates as follows:
 
 1. A prefix holder creates a list of Sources authorized to send packets to the holder's destination prefix or a designated subprefix of that prefix.
-2. The list is published as one or more Source Authorization (SA) Objects. For example Source Prefix Authorization (SPA) Objects.
+2. The list is published as one or more SA Objects. For example Source Prefix Authorization (SPA) Objects.
 3. The destination prefix is advertised via BGP.
 4. The BGP UPDATE includes the SOURCE_SELECTIVE Path Attribute referencing SA object(s) using one or more Source Authorization Identifier (SA-ID) fields.
 5. Receiving networks MAY use the SA objects to apply source-based policy.
 
-RPKI Source Authorization objects are intended to inform local policy decisions rather than to directly affect BGP route selection.
-
-The SOURCE_SELECTIVE Path Attribute is optional, transitive, and summarization-safe.
+RPKI SA objects are intended to inform local policy decisions rather than to directly affect BGP route selection.
 
 ## Design Rationale {#design-rationale}
 
 This subsection is non-normative.
 
-The SOURCE_SELECTIVE Path Attribute associates RPKI objects (e.g. SPA) with specific BGP route advertisements while preserving BGP semantics. RPKI provides verifiable assertions about which sources are authorized to originate traffic for a given prefix, but it does not define how such assertions are associated with BGP routes. SOURCE_SELECTIVE allows a BGP speaker to reference these holder-signed objects without embedding authorization data directly in BGP.
+The SOURCE_SELECTIVE Path Attribute associates RPKI objects (e.g. SPA) with specific BGP route advertisements while preserving BGP semantics. RPKI provides verifiable assertions about which sources are authorized to originate traffic for a given prefix, but it does not define how such assertions are associated with BGP routes. SOURCE_SELECTIVE allows a BGP speaker to reference these holder-signed objects from BGP route advertisements.
 
-Attaching the source authorization policy directly to the BGP route advertisement ensures natural fate-sharing between reachability and its associated policy constraints. Because the authorization semantics are bound to the lifecycle of the specific NLRI, any subsequent routing changes automatically apply to the policy without requiring independent out-of-band synchronization mechanisms. This cohesive fate-sharing simplifies state management for downstream routers by tracking reachability and authorization policy as a unified routing primitive.
+Attaching the source authorization policy directly to the BGP route advertisement ensures fate-sharing between reachability and its associated policy constraints. Because the authorization semantics are bound to the lifecycle of the specific NLRI, any subsequent routing changes automatically apply to the policy without requiring independent out-of-band synchronization mechanisms.
+
+The SOURCE_SELECTIVE Path Attribute carries compact references to Source Authorization objects rather than embedding authorization data directly into BGP UPDATE messages. This separates policy distribution from route advertisement and allows authorization information to be maintained within the RPKI system while only lightweight references are propagated through BGP.
 
 Unlike BGP Communities, which are applied per AS and reflect operational policy, the SOURCE_SELECTIVE Path Attribute carries references to RPKI objects created and signed by the IP prefix holder. This ensures that the attribute conveys holder-authorized source information, rather than unverified operational intent from intermediate ASes.
 
 Route aggregation can obscure authorization semantics tied to more specific prefixes. By allowing multiple RPKI references to be attached to an aggregated route, the attribute preserves this context that would otherwise be lost.
 
-To prevent unnecessary global propagation, the framework includes a control-plane scoping mechanism. Each Source Authorization sub-TLV carries a Max AS Hops metric that decays at external boundaries, allowing prefix holders to define a strict propagation blast radius.
+To prevent unnecessary global propagation, the framework includes a control-plane scoping mechanism. Each Source Authorization sub-TLV carries a Max AS Hops value that limits the AS-path scope within which the referenced Source Authorization is considered valid. Supporting BGP speakers evaluate this value against the route's AS_PATH and SHOULD suppress propagation of Source Authorization information when the Max AS Hops limit has been reached.
 
-Conventional access control lists (ACLs) and BGP FlowSpec [RFC8955] filters require resource-intensive multi-field packet classification engines. In contrast, the SOURCE_SELECTIVE framework leverages native longest-prefix-match (LPM) logic. Executing a secondary algorithmic LPM lookup for source validation optimizes router hardware utilization, preserving line-rate 
-forwarding performance and minimizing memory overhead at scale.
+Conventional access control lists (ACLs) and BGP FlowSpec [RFC8955] policies are typically represented as packet classification rules. SOURCE_SELECTIVE instead expresses authorization using source and destination prefix relationships. This allows implementations to leverage forwarding resources commonly used for prefix lookups, which are typically provisioned at substantially larger scale than policy classification resources.
 
 ## Intended Status and Scope {#intended-status-and-scope}
 
@@ -139,7 +136,7 @@ While the broader framework intersects with other Routing Area architectures, th
 
 ## Overview {#overview}
 
-The SOURCE_SELECTIVE Path Attribute provides a reference to one or more Source Authorization (SA) objects associated with the advertised NLRI.
+The SOURCE_SELECTIVE Path Attribute provides a reference to one or more SA objects associated with the advertised NLRI.
 
 ## Attribute Properties {#attribute-properties}
 
@@ -176,7 +173,7 @@ The complete encoding is as follows:
 * The Attribute Flags field is set as specified in Section 4.2.
 * The Attribute Type Code identifies the SOURCE_SELECTIVE Path Attribute and is assigned by IANA.
 * The Attribute Length field encodes the length, in octets, of the Attribute Value field. A one-octet or two-octet length field is used depending on whether the Extended Length flag is set, as specified in [RFC4271].
-* The Number of SA-ID (Source Authorization Identifier) TLVs indicates the total number of SA-ID TLVs that follow.
+* The Number of SA-ID TLVs indicates the total number of TLVs that follow.
 * SA-ID TLVs are encoded sequentially, with no padding between fields.
 
 If the total Attribute Length exceeds 255 octets, the Extended Length flag MUST be set and a two-octet Attribute Length field used, as specified in [RFC4271].
@@ -185,7 +182,7 @@ If the total Attribute Length exceeds 255 octets, the Extended Length flag MUST 
 
 Each SA-ID Field is encoded as a TLV (Type-Length-Value) structure, allowing multiple policy types to coexist and enabling future extensibility. 
 
-The SA-ID TLV defines a common identification framework for Source Authorization objects that are anchored to an IP address prefix. The prefix encoding maps directly to the target network prefix space, enabling routers to index and query their local RPKI cache tables.
+The SA-ID TLV defines a common identification framework for SA objects that are anchored to an IP address prefix. The prefix encoding maps directly to the target network prefix space, enabling routers to index and query their local RPKI cache tables.
 
 ### Encoding {#encoding}
 ~~~~~~~~~~
@@ -202,59 +199,50 @@ The SA-ID TLV defines a common identification framework for Source Authorization
 +------------------------+
 ~~~~~~~~~~
 
-* SA Type (TLV Type): Indicates the type of referenced RPKI Source Authorization (SA) object and IP address family. Example assignments (by IANA):  
+* SA Type (TLV Type): Indicates the type of referenced RPKI SA object and IP address family. Example assignments (by IANA):  
   * 0x01 = IPv4 Source Prefix Authorization (SPA-v4)
   * 0x02 = IPv6 Source Prefix Authorization (SPA-v6)
   * 0x03-0xFF = reserved for future types  
 * TLV Length: The length, in octets, of the TLV Value field, including the Max AS Hops, Prefix Length, and Protected Prefix fields.
-* Max AS Hops: Maximum number of Autonomous System (AS) hops this sub-TLV can traverse.
+* Max AS Hops: Maximum AS-path distance at which the referenced Source Authorization is considered valid.
 * Prefix Length: Length, in bits, of the Address Prefix.
-* Protected Prefix: A fixed-length field containing the IP address prefix associated with the referenced Source Authorization object. For IPv4 SA Types, the field occupies 4 octets. For IPv6 SA Types, the field occupies 8 octets.
+* Protected Prefix: A fixed-length field containing the IP address prefix associated with the referenced SA object. For IPv4 SA Types, the field occupies 4 octets. For IPv6 SA Types, the field occupies 8 octets.
 
 ### Semantics {#semantics}
 
-The SA-ID TLV Value MUST encode the prefix length and the protected prefix associated with the referenced Source Authorization (SA) object. The IP version of the protected prefix is implicitly determined by the SA Type.
+The SA-ID TLV Value MUST encode the prefix length and the protected prefix associated with the referenced SA object. The IP version of the protected prefix is implicitly determined by the SA Type.
 
 For IPv4 SA Types, the Protected Prefix field MUST be encoded as 4 octets. For IPv6 SA Types, the Protected Prefix field MUST be encoded as 8 octets, representing the 64 most significant bits of the IPv6 address. Bits beyond the first 64 are not represented and are implicitly set to zero.
 
-The SA-ID TLV Value does not encode repository locations, filenames, or Uniform Resource Identifiers (URIs). Resolution of SA-IDs MUST be performed exclusively by exact matching against locally cached Source Authorization PDUs received via the RPKI to Router (RTR) protocol (see Appendix A for an abstract overview of this cache synchronization model).
+A SOURCE_SELECTIVE attribute MAY contain one or more SA-ID TLVs. An SA-ID applies to an NLRI when the Protected Prefix encoded in the SA-ID is equal to or more specific than the NLRI carried in the UPDATE. SA-ID TLVs that do not correspond to at least one NLRI in the UPDATE MUST be ignored.
 
-## Semantics of Multiple SA-ID Value Fields {#semantics-of-multiple-sa-id-value-fields}
+## Multiple SA-ID TLVs and Route Aggregation {#multiple-sa-id-tlvs-route-aggregation}
 
-Each SA-ID field in the SOURCE_SELECTIVE Path Attribute MUST encode a protected IP address prefix. When multiple SA-ID fields are present within a single attribute, they MUST be evaluated as an open set of independent lookup keys.
+Each SA-ID TLV in the SOURCE_SELECTIVE Path Attribute MUST encode a protected IP address prefix. When multiple SA-ID TLVs are present within a single attribute, they MUST be evaluated as an unordered set of independent Source Authorization references.
 
 Duplicate combinations of SA Type, Prefix Length, and Protected Prefix within the same attribute carry no additional meaning and MUST be ignored by the receiving BGP speaker.
 
-BGP speakers MAY include multiple SA-ID fields for a given NLRI when advertising aggregated or summarized routes. Each individual field preserves the cryptographic lookup mapping for a specific contributing subprefix, ensuring that downstream routers can validate the distinct source constraints applied to different components of the aggregated block.
+When performing route aggregation or summarization, a BGP speaker SHOULD copy the SA-ID TLVs from all contributing routes into the SOURCE_SELECTIVE attribute of the aggregated route.
 
-## Support for Route Summarization {#support-for-route-summarization}
-
-When performing route aggregation or summarization, a BGP speaker SHOULD copy the SA-ID fields from all contributing routes into the SOURCE_SELECTIVE attribute of the new aggregated route. This ensures that source constraints tied to more specific prefixes are not silently discarded during control plane propagation.
-
-If the total length of the combined SA-ID fields exceeds local implementation or hardware constraints, or if the applicability of a specific protected prefix to the broader aggregated block cannot be verified, the aggregating router MAY selectively omit fields.
-
-Implementations SHOULD impose configurable maximum limits on the number of SA-ID fields allowed in a single BGP UPDATE to mitigate resource exhaustion or excessive message sizing.
+If the total length of the combined SA-ID TLVs exceeds local implementation or hardware constraints, or if the applicability of a specific protected prefix to the broader aggregated block cannot be verified, the aggregating router MAY selectively omit fields.
 
 ## Processing Rules {#processing-rules}
 
-BGP speakers receiving the SOURCE_SELECTIVE attribute MUST process it as an optional transitive attribute in accordance with the error-handling procedures in [RFC7606].
+BGP speakers receiving the SOURCE_SELECTIVE attribute MUST process it in accordance with the error-handling procedures in [RFC7606].
 
 * Validation failure of referenced RPKI SA Objects MUST NOT invalidate the route.
 * Unsupported BGP speakers MUST propagate the attribute unchanged.
-* SA-ID fields in the attribute are logical references and MUST NOT be interpreted as instructions to retrieve objects.
+* SA-ID TVLs in the attribute are logical references and MUST NOT be interpreted as instructions to retrieve objects.
 * Retrieval and validation of RPKI data are performed via local caches using existing mechanisms (see Appendix A).
 * Validated SA Object data MAY be used to enforce policies restricting IP packet forwarding based on source authorization.
-* Resolution of SA-ID TLVs MUST be performed by exact data-field matching of the Protected Prefixes against the local cache.
+* Resolution of SA-ID TLVs MUST be performed by exact data-field matching of the Protected Prefixes against the local cache Source Authorization PDUs.
 * SA-ID processing SHOULD be consistent across enforcement points to prevent unintended traffic drops or acceptance of unauthorized traffic.
 * TLVs of unknown SA Type MUST be propagated unchanged.
+* An SA-ID TLV whose encoding does not conform to {{sa-id-tlv-format}} is considered malformed.
 
-## Data-Plane Enforcement and MTU Handling {#data-plane-enforcement-and-mtu-handling}
+## Data-Plane Enforcement Considerations {#data-plane-enforcement-considerations}
 
-When programming forwarding state for a route carrying the SOURCE_SELECTIVE attribute:
-
-* Ingress routers MUST enforce strict (destination, source) matching and discard non-matching traffic, including ICMPv6 error messages (e.g., Type 2 PTB and Type 3 Time Exceeded).
-* Implementations MUST NOT install blanket bypass rules for incoming ICMPv6 traffic destined to a protected prefix.
-* Because strict filtering prevents classic PMTUD [RFC8201], communicating endpoints SHOULD implement DPLPMTUD [RFC8899], maintain a conservative MTU floor (e.g., 1280 octets), or rely on site edge devices (such as firewalls or CPEs) for TCP MSS clamping.
+Implementations MUST NOT treat the IP protocol number alone as sufficient to bypass a configured source-authorization policy. Local policy MAY provide explicitly scoped handling for control and diagnostic traffic. Additional operational considerations are discussed in [I-D.braet-idr-source-selective-bgp-framework].
 
 # Operational Considerations {#operational-considerations}
 
@@ -264,21 +252,17 @@ BGP SOURCE_SELECTIVE Attribute is intended to be incrementally deployable and do
 
 ### Route Processing and Resource Optimization {#route-processing-and-resource-optimization}
 
-Resource Protection: To optimize hardware lookup tables and safeguard SSB-enabled router resources, active implementation of these policies SHOULD be restricted exclusively to ASNs that are explicitly identified. When these policies are activated, local router resource utilization SHOULD be carefully monitored to mitigate the risk of resource exhaustion. The mechanisms to identify ASNs for which Source Prefix policies are to be implemented include administrative configuration, BGP Communities, or Autonomous System Provider Authorization (ASPA) based detection mechanisms. Typically, a network supporting SSB would activate Source Prefix policies for locally originated prefixes, prefixes originated by customer AS networks (as identified via ASPA or eBGP Role Detection [RFC9234]), and optionally the broader customer cone of those networks.
+Resource Protection: To optimize hardware lookup tables and safeguard SSB-enabled router resources, active implementation of these policies SHOULD be restricted exclusively to ASNs that are explicitly identified. When these policies are activated, local router resource utilization SHOULD be carefully monitored to mitigate the risk of resource exhaustion. The mechanisms to identify ASNs for which SPA (Source Prefix Authorization) policies are to be implemented include administrative configuration, BGP Communities, or Autonomous System Provider Authorization (ASPA) based detection mechanisms. Typically, a network supporting SSB would activate SPA policies for locally originated prefixes, prefixes originated by customer AS networks (as identified via ASPA or eBGP Role Detection [RFC9234]), and optionally the broader customer cone of those networks.
 
-Table Resource Reduction: When implementing Source Prefix Policies, operators MAY use RPKI ROA and ASPA information to eliminate irrelevant Source Prefix Policy entries from allowlists. This reduces table resource consumption by removing unnecessary allowlist entries and strengthens Source Address Validation (SAV), as some packets with spoofed source IP addresses that would otherwise match allowlist entries will be filtered.
+Table Resource Reduction: When implementing SPA Policies, operators MAY use RPKI ROA and ASPA information to eliminate irrelevant SPA Policy entries from allowlists. This reduces table resource consumption by removing unnecessary allowlist entries and strengthens Source Address Validation (SAV), as some packets with spoofed source IP addresses that would otherwise match allowlist entries will be filtered.
 
-Route Aggregation Policies: Aggregation policies MAY include Source Authorization (SA) Identifier Value fields of contributing routes in SOURCE_SELECTIVE Path Attributes whenever feasible.
+Route Aggregation Policies: Aggregation policies MAY include SA-ID TLVs of contributing routes in SOURCE_SELECTIVE Path Attributes whenever feasible.
 
 Aggregation Risks: Operators SHOULD take into account that SOURCE_SELECTIVE Attributes may be omitted by upstream networks when networks not supporting the SOURCE_SELECTIVE Path Attribute perform aggregation.
-
-Inbound Evaluation: When a supporting BGP speaker receives a route containing a SOURCE_SELECTIVE attribute, it MUST evaluate the Max AS Hops field of each contained SA sub-TLV against the length of the accompanying AS_PATH attribute. If the number of AS hops in the AS_PATH attribute is greater than the value specified in Max AS Hops, the sub-TLV MUST be considered expired and ignored.
 
 ### Policy Enforcement and Monitoring {#policy-enforcement-and-monitoring}
 
 SAV Integration: Enforcement of SOURCE_SELECTIVE Attribute Source Authorization is most effective when combined with Source Address Validation (SAV).
-
-Policy Consistency: Operators SHOULD ensure consistent validation and policy application across enforcement points.
 
 Traffic Protection: Source Authorization policies MAY include mechanisms to protect traffic from congestion or overload caused by other traffic sharing the same network resources, particularly in scenarios where other traffic classes have increased exposure to overload or denial-of-service attacks.
 
@@ -288,26 +272,46 @@ Source Selective signaling SHOULD be treated as an input to local policy, not as
 
 ## Scaling Considerations {#scaling-considerations}
 
-SOURCE_SELECTIVE Attribute is designed to scale in large BGP deployments by offloading most policy data to RPKI objects, carrying only compact references in BGP UPDATE messages.
-
 * Limits per UPDATE: Implementations SHOULD impose configurable limits on the number of SA-ID TLVs per NLRI to prevent excessive BGP UPDATE message sizes and reduce CPU and memory load.
 * Aggregation behavior: When aggregating multiple prefixes, SA-ID TLVs MAY be selectively included to maintain authorization semantics while avoiding unnecessary growth of attribute size.
 * Propagation control: As a transitive attribute, SOURCE_SELECTIVE will be propagated by default. Operators MAY filter or limit TLVs on peering sessions to reduce unnecessary propagation, similar to practices used for BGP Communities.
 * Caching and pre-validation: RPKI caches can be used to pre-validate referenced SA objects, minimizing per-update processing overhead on routers.
 
-By keeping only source IP address prefix references in the BGP attribute, the SOURCE_SELECTIVE design balances security expressiveness with operational scalability, and avoids the scaling challenges historically associated with large per-prefix metadata, such as extensive Communities or Extended Communities usage.
-
 ## Policy Enforcement on ASBR Nodes {#policy-enforcement-on-asbr-nodes}
 
 Source Authorization (SA) policies derived from the SOURCE_SELECTIVE attribute SHOULD be enforced on Autonomous System Border Routers (ASBRs) interfacing external domains in the ingress direction.
 
-When an ASBR imports a BGP route carrying the SOURCE_SELECTIVE attribute, it MUST map the referenced SA objects to corresponding ingress data-plane packet validation policies. Interior BGP speakers within the AS MAY propagate the attribute without instantiating local forwarding-plane filters.
+When an ASBR imports a BGP route carrying the SOURCE_SELECTIVE attribute for which it is configured to enforce an SA policy, it MUST map the referenced SA objects to corresponding ingress data-plane packet validation policies. Interior BGP speakers within the AS MAY propagate the attribute without instantiating local forwarding-plane filters.
 
 ## Outbound Propagation Guidelines {#outbound-propagation-guidelines}
 
 To minimize unnecessary attribute propagation across the global internet, operators MAY configure outbound routing policies to manage the SOURCE_SELECTIVE attribute when peering with external networks.
 
 When advertising a route to an eBGP peer assumed not to support the Source-Selective BGP Framework, the outbound policy MAY strip the SOURCE_SELECTIVE attribute if the current AS_PATH length relative to the sub-TLV's Max AS Hops indicates that the policy boundary is nearing expiration.
+
+## Max AS Hops Evaluation and Propagation {#max-as-hops-evaluation-propagation}
+
+Each SA-ID TLV carries a Max AS Hops value that limits the AS-path scope within which the referenced Source Authorization is valid. Supporting BGP speakers evaluate this value against the route's AS_PATH and SHOULD suppress propagation of Source Authorization information once the Max AS Hops limit has been reached.
+
+### AS Path Distance Calculation
+
+For evaluation of the Max AS Hops field, a supporting BGP speaker derives an Effective AS Path Count from the AS_PATH attribute as follows:
+ 
+* Confederation path segments MUST NOT be counted.
+* An AS_SET MUST contribute one hop, regardless of the number of AS numbers contained within the set.
+* Within an AS_SEQUENCE segment, each unique AS number MUST contribute one hop.
+
+The resulting value is referred to as the Effective AS Path Count.
+
+### Inbound Evaluation
+
+A receiving BGP speaker MUST compare the Effective AS Path Count against the Max AS Hops value.
+
+If the Effective AS Path Count exceeds the Max AS Hops value, the corresponding SA-ID TLV MUST be considered out of scope and MUST be ignored for local policy evaluation.
+
+### Outbound Propagation
+
+When advertising a route to an eBGP peer, a supporting BGP speaker SHOULD suppress propagation of SA-ID TLVs whose Effective AS Path Count is equal to or greater than the associated Max AS Hops value.
 
 ## Impact on Route Selection {#impact-on-route-selection}
 
@@ -328,20 +332,13 @@ Source Prefixes are published in publicly accessible RPKI repositories and may r
 
 Such limitations are optional but improve source-based authorization effectiveness and reduce abuse risk.
 
-Failure to validate Source Prefix Authorization (SPA) objects correctly, or to apply consistent policy across enforcement points, may result in unintended traffic drops or acceptance of unauthorized traffic.
-
 Implementations should validate TLV sizes carried in the SOURCE_SELECTIVE attribute and reject extreme updates.
 
-SOURCE_SELECTIVE attribute relies on RPKI to ensure that only legitimate holders of IP address prefixes can publish Source Authorization (SA) objects. Integrity and authenticity of SA objects depend on correct RPKI certificate issuance, publication, and validation.
-
-## ICMPv6 Bypass Prevention {#icmpv6-bypass-prevention}
-
-Exempting ICMPv6 messages from source-selective validation allows unauthorized third parties to inject arbitrary traffic toward protected prefixes. To prevent data-plane denial-of-service (DDoS) reflection and state-exhaustion attacks, source-selective filtering MUST be applied uniformly across all IP protocols without unauthenticated ICMP exceptions.
+SOURCE_SELECTIVE attribute relies on RPKI to ensure that only legitimate holders of IP address prefixes can publish SA objects. Integrity and authenticity of SA objects depend on correct RPKI certificate issuance, publication, and validation.
 
 ## Unsigned Attribute and Integrity Considerations {#unsigned-attribute-and-integrity-considerations}
 
-The SOURCE_SELECTIVE attribute acts strictly as an unsigned lookup pointer and does not carry self-authenticating policy payloads within the BGP UPDATE. To protect against on-path tampering, the receiving BGP speaker MUST validate
-any referenced policy identifier against its local cache of cryptographically authenticated Validated SPA Payloads (VSPs).
+The SOURCE_SELECTIVE attribute acts strictly as an unsigned lookup pointer and does not carry self-authenticating policy payloads within the BGP UPDATE. To protect against on-path tampering, the receiving BGP speaker MUST validate any referenced policy identifier against its local cache of cryptographically authenticated Validated SPA Payloads (VSPs).
 
 If an on-path actor alters or injects an unauthorized TLV, the local lookup against the authenticated cache fails, and the router MUST treat the policy as invalid, falling back to default forwarding. If an on-path actor removes the attribute or its TLVs, the route reverts to standard BGP behavior without source-specific filtering. Further threat analysis and trust considerations are detailed in [I-D.braet-idr-source-selective-bgp-framework].
 
@@ -391,8 +388,8 @@ Changes from draft-braet-idr-bgp-source-selective-attr-00 to -01:
 
 * Fully updated the IANA Considerations section based on direct IANA email feedback.
 * Updated author affiliation company name to Liberty Global.
-* Introduced a "Max AS Hops" sub-TLV field based on mailing list feedback. This updated the Design Rationale, Encoding, Semantics, Support for Route Summarization, Route Processing, and Resource Optimization sections, and added the "Outbound Propagation Guidelines" section.
-* Added "PMTUD and Diagnostic Interactions" sections ("ICMP and MTU Handling" and "ICMPv6 Bypass Prevention") to mitigate path MTU discovery concerns.
+* Introduced a "Max AS Hops" sub-TLV field based on mailing list feedback. This updated the Design Rationale, Encoding, Semantics, Support for Route Summarization, Route Processing, and Resource Optimization sections, and added the "Max AS Hops Evaluation and Propagation" section.
+* Added "Data-Plane Enforcement Considerations" section with reference to Source-Selective BGP Framework to address path MTU discovery concerns.
 * Replaced the "Hardware Optimization" section with a "Resource Protection" section to improve guidelines for explicitly controlling router resource usage during source policy implementation.
 * Updated the Introduction with a reference to the Framework document explaining why BGP Communities are not used.
 * Added a "Policy Enforcement on ASBR Nodes" section to specify exactly where source authorization policies should be enforced.
@@ -402,6 +399,7 @@ Changes from draft-braet-idr-bgp-source-selective-attr-00 to -01:
 * Revised the first paragraph of Section 1 to explicitly clarify that this mechanism only offers IP reachability control.
 * Added text to the Design Rationale highlighting the resource consumption differences between packet filters and SSB's second lookup.
 * Added a non-normative "Intended Status and Scope" section.
+* Merged sections "Semantics of Multiple SA-ID Value Fields" and "Support for Route Summarization" into "Multiple SA-ID TLVs and Route Aggregation".
 
 # Acknowledgments {#acknowledgments}
 {:unnumbered}
